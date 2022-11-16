@@ -11,7 +11,7 @@ def unpickle(file):
         data = pickle.load(fo, encoding='bytes')
     return data
 
-
+# test comment
 train = unpickle('./cifar-10-batches-py/data_batch_1')
 test = unpickle('./cifar-10-batches-py/test_batch')
 class_names = ["airplane", "automobile", "bird", "cat", "deer", "dog", "frog", "horse", "ship", "truck"]
