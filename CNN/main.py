@@ -39,7 +39,7 @@ dropout_1 = 0.1  # seems to affect the improvement of accuracy per iteration.
 dropout_2 = 0.1
 batch_size = 32  # a smaller batch size means more batches to be processed per epoch.
 
-if not path.exists("./saved_model") or rebuild:
+if not path.exists("saved_model") or rebuild:
     model = models.Sequential([
         layers.Conv2D(32, (2, 2), activation='relu', input_shape=(32, 32, 3)),
         layers.MaxPooling2D(2, 2),
@@ -64,7 +64,7 @@ if not path.exists("./saved_model") or rebuild:
               validation_data=(x_test, y_test))
     model.save("./saved_model")
 
-model = keras.models.load_model("./saved_model")
+model = keras.models.load_model("saved_model")
 
 test_loss, test_acc = model.evaluate(x_test, y_test)
 print("Tested accuracy: ", test_acc)
