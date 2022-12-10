@@ -9,7 +9,11 @@ ssl._create_default_https_context = ssl._create_unverified_context
 # other imports
 import numpy as np
 import matplotlib.pyplot as plt
+import sklearn.model_selection
 from keras import layers, models
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import confusion_matrix
+import seaborn as sns
 
 # Display the version
 print(tf.__version__)
@@ -20,8 +24,12 @@ cifar10 = tf.keras.datasets.cifar10
 # Distribute it to train and test set
 (x_train, y_train), (x_test, y_test) = cifar10.load_data()
 print(x_train.shape, y_train.shape, x_test.shape, y_test.shape)
-epochs = 10
 rebuild = True
+
+#split the data
+x_training, x_cv, y_training, y_cv = train_test_split(x_train, y_train, test_size=0.28, random_state=1000)
+#to validate split is identical.
+#x1, x2, y1, y2 = train_test_split(x_train, y_train, test_size=0.28, random_state=1000)
 
 # Reduce pixel values
 x_train, x_test = x_train / 255.0, x_test / 255.0
@@ -33,11 +41,18 @@ y_train, y_test = y_train.flatten(), y_test.flatten()
 The code below uses a convolutional neural network to train the model
 """
 
-# Hyper Parameters - we can tweak these parameters to change the effectiveness of the model
-learning_rate = 0.0005  # this affects val_accuracy
-dropout_1 = 0.1  # seems to affect the improvement of accuracy per iteration.
+
+############# HYPERPARAMETERS FIXED ##############
+dropout_1 = 0.1  
 dropout_2 = 0.1
-batch_size = 32  # a smaller batch size means more batches to be processed per epoch.
+batch_size = 32  
+##################################################
+
+########### HYPERPARAMETERS FOR TUNING ###########
+learning_rate = 0.0005 
+epochs = 10
+##################################################
+
 
 if not path.exists("saved_model") or rebuild:
     model = models.Sequential([
@@ -56,40 +71,74 @@ if not path.exists("saved_model") or rebuild:
     optimizer = tf.optimizers.Adam(learning_rate=learning_rate)
     # Compile
     model.compile(optimizer=optimizer,
-                  loss='sparse_categorical_crossentropy',
-                  metrics=['accuracy'])
-    model.fit(x_train, y_train,
-              batch_size=batch_size,
-              epochs=epochs,
-              validation_data=(x_test, y_test))
-    model.save("./saved_model")
+                    loss='sparse_categorical_crossentropy',
+                    metrics=['accuracy'])
+    history = model.fit(x_train, y_train,
+                batch_size=batch_size,
+                epochs=epochs,
+                validation_data=(x_test, y_test))
+    model.save("./best_model")    #change model here
 
-model = keras.models.load_model("saved_model")
+
+
+model = keras.models.load_model("best_model") #change model here
 
 test_loss, test_acc = model.evaluate(x_test, y_test)
 print("Tested accuracy: ", test_acc)
 
-# label mapping
+# # label mapping
 
-labels = '''airplane automobile bird cat deer dog frog horse ship truck'''.split()
+# labels = '''airplane automobile bird cat deer dog frog horse ship truck'''.split()
 
-# select the image from our test dataset
-image_number = 0
+# # select the image from our test dataset
+# image_number = 0
 
-# display the image
-plt.imshow(x_test[image_number])
+# # display the image
+# plt.imshow(x_test[image_number])
+# plt.show()
+
+# # load the image in an array
+# n = np.array(x_test[image_number])
+
+# # reshape it
+# p = n.reshape(1, 32, 32, 3)
+
+# # pass in the network for prediction and
+# predicted_label = labels[model.predict(p).argmax()]
+# original_label = labels[y_test[image_number]]
+
+# # display the result
+# print("Original label is {} and predicted label is {}".format(
+#     original_label, predicted_label))
+
+plt.figure(figsize = (8,8))
+
+plt.subplot(1,2,1)
+plt.plot(range(epochs) , history.history["accuracy"] , "r" , label = "Training Accuracy")
+plt.plot(range(epochs) , history.history["val_accuracy"] , "b" , label = "Validation Accuracy")
+plt.legend(loc="upper left")
+plt.title("Accuracy")
+
+plt.subplot(1,2,2)
+plt.plot(range(epochs) , history.history["loss"] , "r" , label = "Training Loss")
+plt.plot(range(epochs) , history.history["val_loss"] , "b" , label = "Validation Loss")
+plt.legend(loc="upper right")
+plt.title("Loss")
+
 plt.show()
 
-# load the image in an array
-n = np.array(x_test[image_number])
+predictions  = model.predict(x_test)
 
-# reshape it
-p = n.reshape(1, 32, 32, 3)
+predictions_for_cm = predictions.argmax(1)
 
-# pass in the network for prediction and
-predicted_label = labels[model.predict(p).argmax()]
-original_label = labels[y_test[image_number]]
+class_names = ["airplane","automobile","bird","cat","deer","dog","frog","horse","ship","truck"]
 
-# display the result
-print("Original label is {} and predicted label is {}".format(
-    original_label, predicted_label))
+cm = confusion_matrix(y_test,predictions_for_cm)
+plt.figure(figsize=(10,8))
+conf_mat = sns.heatmap(cm, annot=True, fmt='g', xticklabels=class_names, yticklabels = class_names)
+conf_mat.set(ylabel="True Label", xlabel="Predicted Label")
+plt.show();
+
+# The code below is to look further into where the code went wrong
+
+print(sklearn.metrics.classifcation_report(y_test,predictions_for_cm))
