@@ -13,6 +13,7 @@ import sklearn.model_selection
 from keras import layers, models
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import confusion_matrix
+from sklearn import metrics
 import seaborn as sns
 
 # Display the version
@@ -50,7 +51,7 @@ batch_size = 32
 
 ########### HYPERPARAMETERS FOR TUNING ###########
 learning_rate = 0.0005 
-epochs = 10
+epochs = 30
 ##################################################
 
 
@@ -77,51 +78,30 @@ if not path.exists("saved_model") or rebuild:
                 batch_size=batch_size,
                 epochs=epochs,
                 validation_data=(x_test, y_test))
-    model.save("./best_model")    #change model here
+    model.save("./test_overfit")    #change model here
 
 
 
-model = keras.models.load_model("best_model") #change model here
+model = keras.models.load_model("test_overfit") #change model here
 
 test_loss, test_acc = model.evaluate(x_test, y_test)
 print("Tested accuracy: ", test_acc)
-
-# # label mapping
-
-# labels = '''airplane automobile bird cat deer dog frog horse ship truck'''.split()
-
-# # select the image from our test dataset
-# image_number = 0
-
-# # display the image
-# plt.imshow(x_test[image_number])
-# plt.show()
-
-# # load the image in an array
-# n = np.array(x_test[image_number])
-
-# # reshape it
-# p = n.reshape(1, 32, 32, 3)
-
-# # pass in the network for prediction and
-# predicted_label = labels[model.predict(p).argmax()]
-# original_label = labels[y_test[image_number]]
-
-# # display the result
-# print("Original label is {} and predicted label is {}".format(
-#     original_label, predicted_label))
 
 plt.figure(figsize = (8,8))
 
 plt.subplot(1,2,1)
 plt.plot(range(epochs) , history.history["accuracy"] , "r" , label = "Training Accuracy")
 plt.plot(range(epochs) , history.history["val_accuracy"] , "b" , label = "Validation Accuracy")
+plt.xlabel("Epochs")
+plt.ylabel("Accuracy")
 plt.legend(loc="upper left")
 plt.title("Accuracy")
 
 plt.subplot(1,2,2)
 plt.plot(range(epochs) , history.history["loss"] , "r" , label = "Training Loss")
 plt.plot(range(epochs) , history.history["val_loss"] , "b" , label = "Validation Loss")
+plt.xlabel("Epochs")
+plt.ylabel("Loss")
 plt.legend(loc="upper right")
 plt.title("Loss")
 
@@ -141,4 +121,4 @@ plt.show();
 
 # The code below is to look further into where the code went wrong
 
-print(sklearn.metrics.classifcation_report(y_test,predictions_for_cm))
+print(metrics.classification_report(y_test,predictions_for_cm))
